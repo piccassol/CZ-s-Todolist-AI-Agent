@@ -1,0 +1,84 @@
+Project: AI Todo List Organizer
+
+1. Features
+   •   Add, categorize, and prioritize tasks
+   •   Schedule tasks based on urgency and deadlines
+   •   Provide reminders and progress tracking
+   •   Integrate with Google Calendar (optional)
+
+2. Tech Stack
+   •   Backend: FastAPI (Python)
+   •   AI: OpenAI API (for NLP categorization)
+   •   Database: SQLite/PostgreSQL
+   •   Frontend: React (optional)
+
+Step 1: Create a GitHub Repo
+	1.	Go to GitHub and create a new repository named AI-Todo-List
+	2.	Clone it locally:
+
+git clone https://github.com/YOUR_USERNAME/AI-Todo-List.git
+cd AI-Todo-List
+
+Step 2: Set Up the Backend
+
+backend/main.py (FastAPI Server)
+
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from datetime import datetime
+import sqlite3
+
+app = FastAPI()
+
+# Database setup
+conn = sqlite3.connect("tasks.db")
+cursor = conn.cursor()
+cursor.execute("""CREATE TABLE IF NOT EXISTS tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    task TEXT,
+                    category TEXT,
+                    priority INTEGER,
+                    due_date TEXT,
+                    status TEXT
+                )""")
+conn.commit()
+
+# Task Model
+class Task(BaseModel):
+    task: str
+    category: str
+    priority: int
+    due_date: str
+
+# Add Task
+@app.post("/add_task/")
+def add_task(task: Task):
+    cursor.execute("INSERT INTO tasks (task, category, priority, due_date, status) VALUES (?, ?, ?, ?, ?)",
+                   (task.task, task.category, task.priority, task.due_date, "pending"))
+    conn.commit()
+    return {"message": "Task added successfully"}
+
+# Get Tasks
+@app.get("/tasks/")
+def get_tasks():
+    cursor.execute("SELECT * FROM tasks")
+    tasks = cursor.fetchall()
+    return {"tasks": tasks}
+
+# Update Task Status
+@app.put("/update_task/{task_id}")
+def update_task(task_id: int, status: str):
+    cursor.execute("UPDATE tasks SET status = ? WHERE id = ?", (status, task_id))
+    conn.commit()
+    return {"message": "Task updated"}
+
+# Delete Task
+@app.delete("/delete_task/{task_id}")
+def delete_task(task_id: int):
+    cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    conn.commit()
+    return {"message": "Task deleted"}
+
+Step 3: Set Up AI Categorization (Optional)
+
+To categorize tasks, we can
